@@ -18,7 +18,6 @@ static const char *json_str1 =
 "        \"GlossDiv\": {"
 "            \"title\": \"S\","
 "            \"null_obj\": null, "
-"            \"null_str\": \" \\u0000 \","
 "            \"GlossList\": {"
 "                \"GlossEntry\": {"
 "                    \"ID\": \"SGML\","
