@@ -131,7 +131,7 @@ default.  You may turn it on by adjusting your configure command with:
    --enable-threading
 
 Separately, the default hash function used for object field keys,
-lh_char_hash, uses a compare-and-swap operation to ensure the randomly
+lh_char_hash, uses a compare-and-swap operation to ensure the random
 seed is only generated once.  Because this is a one-time operation, it
 is always compiled in when the compare-and-swap operation is available.
 
