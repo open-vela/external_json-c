@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/tests -UNDEBUG
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/tests
 
 LDADD= $(LIBJSON_LA)
 
