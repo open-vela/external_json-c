@@ -17,7 +17,6 @@
 
 #define PRId64 "I64d"
 #define SCNd64 "I64d"
-#define PRIu64 "I64u"
 
 #endif
 
