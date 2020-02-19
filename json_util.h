@@ -103,7 +103,6 @@ JSON_EXPORT const char *json_util_get_last_err(void);
 
 
 JSON_EXPORT int json_parse_int64(const char *buf, int64_t *retval);
-JSON_EXPORT int json_parse_uint64(const char *buf, uint64_t *retval);
 JSON_EXPORT int json_parse_double(const char *buf, double *retval);
 
 /**
@@ -111,23 +110,6 @@ JSON_EXPORT int json_parse_double(const char *buf, double *retval);
  * e.g. "int", or "object", etc...
  */
 JSON_EXPORT const char *json_type_to_name(enum json_type o_type);
-
-#ifndef JSON_NORETURN
-#if defined(_MSC_VER)
-#define JSON_NORETURN __declspec(noreturn)
-#else
-/* 'cold' attribute is for optimization, telling the computer this code
- * path is unlikely.
- */
-#define JSON_NORETURN __attribute__ ((noreturn, cold))
-#endif
-#endif
-/**
- * Abort and optionally print a message on standard error.
- * This should be used rather than assert() for unconditional abortion
- * (in particular for code paths which are never supposed to be run).
- * */
-JSON_NORETURN JSON_EXPORT void json_abort(const char *message);
 
 #ifdef __cplusplus
 }

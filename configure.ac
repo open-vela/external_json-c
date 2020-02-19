@@ -200,7 +200,6 @@ AX_COMPILE_CHECK_SIZEOF(long)
 AX_COMPILE_CHECK_SIZEOF(long long)
 AX_COMPILE_CHECK_SIZEOF(size_t, [#include <stdint.h>])
 AX_COMPILE_CHECK_SIZEOF(int64_t, [#include <stdint.h>])
-AX_COMPILE_CHECK_SIZEOF(uint64_t, [#include <stdint.h>])
 
 AC_CONFIG_FILES([
 Makefile
