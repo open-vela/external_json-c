@@ -39,14 +39,6 @@ set(CPACK_PACKAGE_VERSION_MAJOR     "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR     "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH     "${PROJECT_VERSION_PATCH}")
 set(JSON_C_BUGREPORT                "json-c@googlegroups.com")
-set(CPACK_SOURCE_IGNORE_FILES
-        ${PROJECT_SOURCE_DIR}/build
-        ${PROJECT_SOURCE_DIR}/cmake-build-debug
-        ${PROJECT_SOURCE_DIR}/pack
-        ${PROJECT_SOURCE_DIR}/.idea
-        ${PROJECT_SOURCE_DIR}/.DS_Store
-        ${PROJECT_SOURCE_DIR}/.git
-        ${PROJECT_SOURCE_DIR}/.vscode)
 
 include(CheckSymbolExists)
 include(CheckIncludeFile)
@@ -58,17 +50,6 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
-
-# Generate a release merge and test it to verify the correctness of republishing the package.
-ADD_CUSTOM_TARGET(distcheck
-COMMAND make package_source
-    COMMAND tar -xvf "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source.tar.gz"
-    COMMAND mkdir "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
-    COMMAND cmake "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/" -B"./${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build/"
-    COMMAND make -C "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
-    COMMAND make test -C "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
-    COMMAND rm -rf "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source"
-)
 
 # Enable or disable features. By default, all features are turned off.
 option(ENABLE_RDRAND                "Enable RDRAND Hardware RNG Hash Seed"          OFF)
@@ -161,6 +142,7 @@ endif()
 
 if (MSVC)
     check_symbol_exists(strtoll     "stdlib.h" HAVE_STRTOLL)
+    check_symbol_exists(strtoull    "stdlib.h" HAVE_STRTOULL)
 
     set(json_c_strtoll "strtoll")
     if (NOT HAVE_STRTOLL)
@@ -170,6 +152,16 @@ if (MSVC)
             set(HAVE_STRTOLL 1)
             set(json_c_strtoll "_strtoi64")
             # could do the same for strtoull, if needed
+        endif()
+    endif()
+
+    set(json_c_strtoull "strtoull")
+    if (NOT HAVE_STRTOULL)
+        # Use _strtoui64 if strtoull is not available.
+        check_symbol_exists(_strtoui64 "stdlib.h" __have_strtoui64)
+        if (__have_strtoui64)
+            set(HAVE_STRTOULL 1)
+            set(json_c_strtoull "_strtoui64")
         endif()
     endif()
 endif()
@@ -316,24 +308,6 @@ set(JSON_C_SOURCES
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
-
-# generate doxygen documentation for json-c API
-
-find_package(Doxygen)
-option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation(requires Doxygen)" ${DOXYGEN_FOUND})
-
-if (DOXYGEN_FOUND)
-
-	add_custom_target(doc
-  	COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-	
-	# request to configure the file
-	configure_file(Doxyfile Doxyfile)
-
-else (DOXYGEN_FOUND)
-	message("Doxygen need to be installed to generate the doxygen documentation")
-endif(DOXYGEN_FOUND)
 
 # XXX for a normal full distribution we'll need to figure out
 # XXX how to build both shared and static libraries.
