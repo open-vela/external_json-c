@@ -19,11 +19,6 @@ if(POLICY CMP0054)
     cmake_policy(SET CMP0054 NEW)
 endif()
 
-# set default build type if not specified by user
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE debug)
-endif()
-
 # Include file check macros honor CMAKE_REQUIRED_LIBRARIES
 # i.e. the check_include_file() calls will include -lm when checking.
 if(POLICY CMP0075)
@@ -44,6 +39,14 @@ set(CPACK_PACKAGE_VERSION_MAJOR     "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR     "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH     "${PROJECT_VERSION_PATCH}")
 set(JSON_C_BUGREPORT                "json-c@googlegroups.com")
+set(CPACK_SOURCE_IGNORE_FILES
+        ${PROJECT_SOURCE_DIR}/build
+        ${PROJECT_SOURCE_DIR}/cmake-build-debug
+        ${PROJECT_SOURCE_DIR}/pack
+        ${PROJECT_SOURCE_DIR}/.idea
+        ${PROJECT_SOURCE_DIR}/.DS_Store
+        ${PROJECT_SOURCE_DIR}/.git
+        ${PROJECT_SOURCE_DIR}/.vscode)
 
 include(CheckSymbolExists)
 include(CheckIncludeFile)
@@ -55,6 +58,17 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
+
+# Generate a release merge and test it to verify the correctness of republishing the package.
+ADD_CUSTOM_TARGET(distcheck
+COMMAND make package_source
+    COMMAND tar -xvf "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source.tar.gz"
+    COMMAND mkdir "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
+    COMMAND cmake "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/" -B"./${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build/"
+    COMMAND make -C "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
+    COMMAND make test -C "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source/build"
+    COMMAND rm -rf "${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-Source"
+)
 
 # Enable or disable features. By default, all features are turned off.
 option(ENABLE_RDRAND                "Enable RDRAND Hardware RNG Hash Seed"          OFF)
@@ -235,9 +249,6 @@ elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} /wd4701")
 endif()
 
-set(CMAKE_C_FLAGS_DEBUG     "${CMAKE_C_FLAGS_DEBUG} -O0")
-set(CMAKE_C_FLAGS_Release   "${CMAKE_C_FLAGS_Release} -O2")
-
 if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	check_c_source_compiles(
 	[=[
@@ -316,6 +327,24 @@ set(JSON_C_SOURCES
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
+
+# generate doxygen documentation for json-c API
+
+find_package(Doxygen)
+option(BUILD_DOCUMENTATION "Create and install the HTML based API documentation(requires Doxygen)" ${DOXYGEN_FOUND})
+
+if (DOXYGEN_FOUND)
+
+	add_custom_target(doc
+  	COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+	
+	# request to configure the file
+	configure_file(Doxyfile Doxyfile)
+
+else (DOXYGEN_FOUND)
+	message("Doxygen need to be installed to generate the doxygen documentation")
+endif(DOXYGEN_FOUND)
 
 # XXX for a normal full distribution we'll need to figure out
 # XXX how to build both shared and static libraries.

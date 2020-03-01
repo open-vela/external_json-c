@@ -52,3 +52,8 @@ target_link_libraries(
 
 endforeach(TESTNAME)
 
+# Make sure NDEBUG is always undefined for tests
+if (UNIX OR MINGW OR CYGWIN)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -UNDEBUG")
+endif()
+
