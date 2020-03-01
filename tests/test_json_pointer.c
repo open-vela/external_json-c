@@ -1,11 +1,6 @@
 #include "strerror_override.h"
 #include "strerror_override_private.h"
-#ifdef NDEBUG
-#undef NDEBUG
 #include <assert.h>
-#else
-#include <assert.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 
