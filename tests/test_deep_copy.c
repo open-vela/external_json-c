@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
