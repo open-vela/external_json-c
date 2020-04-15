@@ -240,9 +240,6 @@ if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wextra")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wwrite-strings")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wno-unused-parameter")
-    if (NOT WIN32)
-        set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -Wstrict-prototypes")
-    endif()
 
     add_definitions(-D_GNU_SOURCE)
 elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
@@ -262,7 +259,7 @@ if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	/* uClibc toolchains without threading barf when _REENTRANT is defined */
 	#define _REENTRANT 1
 	#include <sys/types.h>
-	int main (void)
+	int main ()
 	{
 	  return 0;
 	}
@@ -278,7 +275,7 @@ if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	list(APPEND CMAKE_REQUIRED_LIBRARIES "-Wl,-Bsymbolic-functions")
 	check_c_source_compiles(
 	[=[
-	int main (void)
+	int main ()
 	{
 	  return 0;
 	}
