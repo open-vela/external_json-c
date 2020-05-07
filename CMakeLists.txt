@@ -69,6 +69,7 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(BUILD_SHARED_LIBS  "Default to building shared libraries" ON)
+option(BUILD_STATIC_LIBS  "Default to building static libraries" ON)
 
 # Generate a release merge and test it to verify the correctness of republishing the package.
 ADD_CUSTOM_TARGET(distcheck
@@ -399,6 +400,20 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
 )
+
+# Allow to build static and shared libraries at the same time
+if (BUILD_STATIC_LIBS)
+    set(ORIGINAL_STATIC_LIB_NAME ${PROJECT_NAME}-static)
+    add_library(${ORIGINAL_STATIC_LIB_NAME} STATIC
+        ${JSON_C_SOURCES}
+        ${JSON_C_HEADERS}
+    )
+
+    # rename the static library
+    set_target_properties(${ORIGINAL_STATIC_LIB_NAME} PROPERTIES
+        OUTPUT_NAME ${PROJECT_NAME}
+    )
+endif ()
 
 # Always create new install dirs with 0755 permissions, regardless of umask
 set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
