@@ -226,35 +226,27 @@ static int get_dev_random_seed(void)
 #pragma comment(lib, "advapi32.lib")
 #endif
 
-static int get_time_seed(void);
-
 static int get_cryptgenrandom_seed(void)
 {
 	HCRYPTPROV hProvider = 0;
-	DWORD dwFlags = CRYPT_VERIFYCONTEXT;
 	int r;
 
 	DEBUG_SEED("get_cryptgenrandom_seed");
 
-	/* WinNT 4 and Win98 do no support CRYPT_SILENT */
-	if (LOBYTE(LOWORD(GetVersion())) > 4)
-		dwFlags |= CRYPT_SILENT;
+	if (!CryptAcquireContextW(&hProvider, 0, 0, PROV_RSA_FULL,
+	                          CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
+	{
+		fprintf(stderr, "error CryptAcquireContextW");
+		exit(1);
+	}
 
-	if (!CryptAcquireContextA(&hProvider, 0, 0, PROV_RSA_FULL, dwFlags))
+	if (!CryptGenRandom(hProvider, sizeof(r), (BYTE *)&r))
 	{
-		fprintf(stderr, "error CryptAcquireContextA 0x%08lx", GetLastError());
-		r = get_time_seed();
+		fprintf(stderr, "error CryptGenRandom");
+		exit(1);
 	}
-	else
-	{
-		BOOL ret = CryptGenRandom(hProvider, sizeof(r), (BYTE*)&r);
-		CryptReleaseContext(hProvider, 0);
-		if (!ret)
-		{
-			fprintf(stderr, "error CryptGenRandom 0x%08lx", GetLastError());
-			r = get_time_seed();
-		}
-	}
+
+	CryptReleaseContext(hProvider, 0);
 
 	return r;
 }
