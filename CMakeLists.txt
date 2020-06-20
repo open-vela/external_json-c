@@ -7,7 +7,15 @@ if(POLICY CMP0048)
 endif()
 
 # JSON-C library is C only project.
-project(json-c LANGUAGES C VERSION 0.14.99)
+if (CMAKE_VERSION VERSION_LESS 3.0)
+	project(json-c)
+	set(PROJECT_VERSION_MAJOR "0")
+	set(PROJECT_VERSION_MINOR "14")
+	set(PROJECT_VERSION_PATCH "99")
+	set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+else()
+	project(json-c LANGUAGES C VERSION 0.14.99)
+endif()
 
 # If we've got 3.0 then it's good, let's provide support. Otherwise, leave it be.
 if(POLICY CMP0038)
@@ -100,6 +108,14 @@ endif()
 if (MSVC)
     list(APPEND CMAKE_REQUIRED_DEFINITIONS /D_CRT_SECURE_NO_DEPRECATE)
     list(APPEND CMAKE_REQUIRED_FLAGS /wd4996)
+endif()
+
+if (NOT DISABLE_STATIC_FPIC)
+    # Use '-fPIC'/'-fPIE' option.
+    # This will allow other libraries to statically link in libjson-c.a
+    # which in turn prevents crashes in downstream apps that may use
+    # a different JSON library with identical symbol names.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 check_include_file("fcntl.h"        HAVE_FCNTL_H)
@@ -213,11 +229,11 @@ check_type_size("ssize_t"           SIZEOF_SSIZE_T)
 endif()
 
 check_c_source_compiles(
-[=[
+"
 extern void json_object_get();
-__asm__(".section .gnu.json_object_get\\n\\t.ascii \\"Please link against libjson-c instead of libjson\\"\\n\\t.text");
+__asm__(\".section .gnu.json_object_get\\n\\t.ascii \\\"Please link against libjson-c instead of libjson\\\"\\n\\t.text\");
 int main(int c, char *v) { return 0;}
-]=]
+"
 HAS_GNU_WARNING_LONG)
 
 check_c_source_compiles(
@@ -276,7 +292,7 @@ endif()
 
 if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	check_c_source_compiles(
-	[=[
+	"
 	/* uClibc toolchains without threading barf when _REENTRANT is defined */
 	#define _REENTRANT 1
 	#include <sys/types.h>
@@ -284,7 +300,7 @@ if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	{
 	  return 0;
 	}
-	]=]
+	"
 	REENTRANT_WORKS
 	)
 	if (REENTRANT_WORKS)
@@ -295,12 +311,12 @@ if (NOT ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC"))
 	# Others may not support it, too.
 	list(APPEND CMAKE_REQUIRED_LIBRARIES "-Wl,-Bsymbolic-functions")
 	check_c_source_compiles(
-	[=[
+	"
 	int main (void)
 	{
 	  return 0;
 	}
-	]=]
+	"
 	BSYMBOLIC_WORKS
 	)
 	list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES "-Wl,-Bsymbolic-functions")
