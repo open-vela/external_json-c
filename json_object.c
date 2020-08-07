@@ -13,6 +13,7 @@
 #include "strerror_override.h"
 
 #include <assert.h>
+#include <ctype.h>
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
@@ -33,9 +34,6 @@
 #include "printbuf.h"
 #include "snprintf_compat.h"
 #include "strdup_compat.h"
-
-/* Avoid ctype.h and locale overhead */
-#define is_plain_digit(c) ((c) >= '0' && (c) <= '9')
 
 #if SIZEOF_LONG_LONG != SIZEOF_INT64_T
 #error "The long long type isn't 64-bits"
@@ -737,7 +735,7 @@ struct json_object *json_object_new_int(int32_t i)
 
 int32_t json_object_get_int(const struct json_object *jso)
 {
-	int64_t cint64 = 0;
+	int64_t cint64=0;
 	double cdouble;
 	enum json_type o_type;
 
@@ -1058,8 +1056,8 @@ static int json_object_double_to_json_string_format(struct json_object *jso, str
 			format_drops_decimals = 1;
 
 		looks_numeric = /* Looks like *some* kind of number */
-		    is_plain_digit(buf[0]) ||
-		    (size > 1 && buf[0] == '-' && is_plain_digit(buf[1]));
+		    isdigit((unsigned char)buf[0]) ||
+		    (size > 1 && buf[0] == '-' && isdigit((unsigned char)buf[1]));
 
 		if (size < (int)sizeof(buf) - 2 && looks_numeric && !p && /* Has no decimal point */
 		    strchr(buf, 'e') == NULL && /* Not scientific notation */
@@ -1307,20 +1305,18 @@ const char *json_object_get_string(struct json_object *jso)
 	default: return json_object_to_json_string(jso);
 	}
 }
-
-static inline ssize_t _json_object_get_string_len(const struct json_object_string *jso)
-{
-	ssize_t len;
-	len = jso->len;
-	return (len < 0) ? -(ssize_t)len : len;
-}
 int json_object_get_string_len(const struct json_object *jso)
 {
+	ssize_t len;
 	if (!jso)
 		return 0;
 	switch (jso->o_type)
 	{
-	case json_type_string: return _json_object_get_string_len(JC_STRING_C(jso));
+	case json_type_string:
+	{
+		len = JC_STRING_C(jso)->len;
+		return (len < 0) ? -(ssize_t)len : len;
+	}
 	default: return 0;
 	}
 }
@@ -1609,10 +1605,9 @@ int json_object_equal(struct json_object *jso1, struct json_object *jso2)
 
 	case json_type_string:
 	{
-		return (_json_object_get_string_len(JC_STRING(jso1)) ==
-		            _json_object_get_string_len(JC_STRING(jso2)) &&
+		return (json_object_get_string_len(jso1) == json_object_get_string_len(jso2) &&
 		        memcmp(get_string_component(jso1), get_string_component(jso2),
-		               _json_object_get_string_len(JC_STRING(jso1))) == 0);
+		               json_object_get_string_len(jso1)) == 0);
 	}
 
 	case json_type_object: return json_object_all_values_equal(jso1, jso2);
@@ -1677,10 +1672,7 @@ int json_c_shallow_copy_default(json_object *src, json_object *parent, const cha
 		}
 		break;
 
-	case json_type_string:
-		*dst = json_object_new_string_len(get_string_component(src),
-		                                  _json_object_get_string_len(JC_STRING(src)));
-		break;
+	case json_type_string: *dst = json_object_new_string(get_string_component(src)); break;
 
 	case json_type_object: *dst = json_object_new_object(); break;
 
