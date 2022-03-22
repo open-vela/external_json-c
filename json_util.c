@@ -101,22 +101,15 @@ struct json_object *json_object_from_fd_ex(int fd, int in_depth)
 	if (!tok)
 	{
 		_json_c_set_last_err(
-		    "json_object_from_fd_ex: unable to allocate json_tokener(depth=%d): %s\n",
-		    depth, strerror(errno));
+		    "json_object_from_fd_ex: unable to allocate json_tokener(depth=%d): %s\n", depth,
+		    strerror(errno));
 		printbuf_free(pb);
 		return NULL;
 	}
 
 	while ((ret = read(fd, buf, JSON_FILE_BUF_SIZE)) > 0)
 	{
-		if (printbuf_memappend(pb, buf, ret) < 0)
-		{
-			_json_c_set_last_err("json_object_from_fd_ex: error reading fd %d: %s\n",
-			                     fd, strerror(errno));
-			json_tokener_free(tok);
-			printbuf_free(pb);
-			return NULL;
-		}
+		printbuf_memappend(pb, buf, ret);
 	}
 	if (ret < 0)
 	{
